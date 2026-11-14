@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오늘의 할 일</title>
+  <style>
+    :root {
+      --ink: #1f2937;
+      --muted: #7b8494;
+      --line: #e8e9ed;
+      --paper: #ffffff;
+      --accent: #ef6f61;
+      --accent-dark: #d9584b;
+      --soft-accent: #fff0ed;
+      --background: #f6f7fb;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 10%, #fff3df 0, transparent 28%),
+        radial-gradient(circle at 90% 85%, #e7f4f1 0, transparent 30%),
+        var(--background);
+      font-family: Georgia, "Noto Serif KR", serif;
+    }
+
+    .app {
+      width: min(100%, 620px);
+      overflow: hidden;
+      background: var(--paper);
+      border: 1px solid rgba(31, 41, 55, 0.06);
+      border-radius: 18px;
+      box-shadow: 0 20px 50px rgba(31, 41, 55, 0.1);
+      animation: appear 0.45s ease-out both;
+    }
+
+    .header {
+      padding: 38px 38px 26px;
+      background: linear-gradient(135deg, #fffaf4, #fff3ef);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent-dark);
+      font: 700 12px/1.4 "Trebuchet MS", sans-serif;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 7vw, 44px);
+      line-height: 1.1;
+      letter-spacing: -0.04em;
+    }
+
+    .summary {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font: 15px/1.5 "Trebuchet MS", sans-serif;
+    }
+
+    .content { padding: 28px 38px 34px; }
+
+    .add-form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .add-form input {
+      min-width: 0;
+      flex: 1;
+      padding: 14px 16px;
+      color: var(--ink);
+      background: #fcfcfd;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      outline: none;
+      font: 15px "Trebuchet MS", sans-serif;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .add-form input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--soft-accent);
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      font: 700 14px "Trebuchet MS", sans-serif;
+    }
+
+    .add-button {
+      padding: 0 20px;
+      color: #fff;
+      background: var(--accent);
+      border-radius: 10px;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .add-button:hover { background: var(--accent-dark); }
+    .add-button:active { transform: translateY(1px); }
+
+    .todo-list {
+      display: grid;
+      gap: 10px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 14px 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      animation: slide-in 0.25s ease-out both;
+    }
+
+    .todo-item.dragging {
+      opacity: 0.45;
+      border-color: var(--accent);
+    }
+
+    .drag-handle {
+      width: 18px;
+      height: 24px;
+      flex: 0 0 auto;
+      padding: 0;
+      color: var(--muted);
+      background: transparent;
+      cursor: grab;
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .drag-handle:active { cursor: grabbing; }
+
+    .todo-item label {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 0;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .todo-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .todo-text {
+      overflow-wrap: anywhere;
+      font: 16px/1.45 "Trebuchet MS", sans-serif;
+    }
+
+    .todo-item.completed .todo-text {
+      color: var(--muted);
+      text-decoration: line-through;
+      text-decoration-thickness: 1.5px;
+    }
+
+    .delete-button {
+      padding: 7px 8px;
+      color: var(--muted);
+      background: transparent;
+      border-radius: 6px;
+    }
+
+    .delete-button:hover {
+      color: var(--accent-dark);
+      background: var(--soft-accent);
+    }
+
+    .empty-state {
+      padding: 34px 20px;
+      color: var(--muted);
+      text-align: center;
+      font: 15px/1.5 "Trebuchet MS", sans-serif;
+    }
+
+    .hidden { display: none; }
+
+    @keyframes appear {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 520px) {
+      body { padding: 12px; }
+      .header { padding: 30px 24px 22px; }
+      .content { padding: 22px 24px 28px; }
+      .add-form { flex-direction: column; }
+      .add-button { min-height: 46px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <p class="eyebrow">Daily notes</p>
+      <h1>오늘의 할 일</h1>
+      <p class="summary" id="summary">새로운 할 일을 추가해 보세요.</p>
+    </header>
+
+    <section class="content" aria-label="할 일 관리">
+      <form class="add-form" id="todo-form">
+        <label for="todo-input" class="hidden">할 일 입력</label>
+        <input id="todo-input" type="text" placeholder="무엇을 해야 하나요?" maxlength="100" autocomplete="off" required>
+        <button class="add-button" type="submit">추가</button>
+      </form>
+
+      <ul class="todo-list" id="todo-list"></ul>
+      <p class="empty-state" id="empty-state">아직 등록된 할 일이 없습니다.</p>
+    </section>
+  </main>
+
+  <script>
+    const form = document.querySelector('#todo-form');
+    const input = document.querySelector('#todo-input');
+    const list = document.querySelector('#todo-list');
+    const emptyState = document.querySelector('#empty-state');
+    const summary = document.querySelector('#summary');
+
+    let todos = [];
+
+    function updateSummary() {
+      const remaining = todos.filter((todo) => !todo.completed).length;
+      if (todos.length === 0) {
+        summary.textContent = '새로운 할 일을 추가해 보세요.';
+      } else if (remaining === 0) {
+        summary.textContent = '모든 할 일을 완료했습니다. 잘했어요!';
+      } else {
+        summary.textContent = `남은 할 일 ${remaining}개`;
+      }
+    }
+
+    function renderTodos() {
+      list.innerHTML = '';
+      emptyState.classList.toggle('hidden', todos.length > 0);
+
+      todos.forEach((todo) => {
+        const item = document.createElement('li');
+        item.className = `todo-item${todo.completed ? ' completed' : ''}`;
+        item.dataset.id = todo.id;
+        item.draggable = true;
+        item.innerHTML = `
+          <button class="drag-handle" type="button" aria-label="${todo.text} 순서 변경" title="드래그해서 순서 변경">⋮⋮</button>
+          <label>
+            <input type="checkbox" ${todo.completed ? 'checked' : ''} aria-label="${todo.text} 완료">
+            <span class="todo-text"></span>
+          </label>
+          <button class="delete-button" type="button" aria-label="${todo.text} 삭제">삭제</button>
+        `;
+        item.querySelector('.todo-text').textContent = todo.text;
+        list.appendChild(item);
+      });
+      updateSummary();
+    }
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+
+      todos.push({ id: Date.now(), text, completed: false });
+      input.value = '';
+      input.focus();
+      renderTodos();
+    });
+
+    list.addEventListener('change', (event) => {
+      if (!event.target.matches('input[type="checkbox"]')) return;
+      const item = event.target.closest('.todo-item');
+      const todo = todos.find((entry) => entry.id === Number(item.dataset.id));
+      todo.completed = event.target.checked;
+      item.classList.toggle('completed', todo.completed);
+      updateSummary();
+    });
+
+    list.addEventListener('click', (event) => {
+      if (!event.target.matches('.delete-button')) return;
+      const item = event.target.closest('.todo-item');
+      todos = todos.filter((todo) => todo.id !== Number(item.dataset.id));
+      renderTodos();
+    });
+
+    let draggedId = null;
+
+    list.addEventListener('dragstart', (event) => {
+      const item = event.target.closest('.todo-item');
+      if (!item) return;
+      draggedId = Number(item.dataset.id);
+      item.classList.add('dragging');
+      event.dataTransfer.effectAllowed = 'move';
+    });
+
+    list.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      const item = event.target.closest('.todo-item');
+      if (item && Number(item.dataset.id) !== draggedId) {
+        event.dataTransfer.dropEffect = 'move';
+      }
+    });
+
+    list.addEventListener('drop', (event) => {
+      event.preventDefault();
+      const target = event.target.closest('.todo-item');
+      if (!target || Number(target.dataset.id) === draggedId) return;
+
+      const draggedIndex = todos.findIndex((todo) => todo.id === draggedId);
+      const targetId = Number(target.dataset.id);
+      const [draggedTodo] = todos.splice(draggedIndex, 1);
+      const targetIndex = todos.findIndex((todo) => todo.id === targetId);
+      const isBeforeTarget = event.clientY < target.getBoundingClientRect().top + target.offsetHeight / 2;
+      const insertIndex = isBeforeTarget ? targetIndex : targetIndex + 1;
+      todos.splice(insertIndex, 0, draggedTodo);
+      renderTodos();
+    });
+
+    list.addEventListener('dragend', (event) => {
+      event.target.closest('.todo-item')?.classList.remove('dragging');
+      draggedId = null;
+    });
+
+    renderTodos();
+  </script>
+</body>
+</html>
